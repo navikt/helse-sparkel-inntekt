@@ -1,4 +1,4 @@
-package no.nav.helse.sputnik
+package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -6,9 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.install
-import io.ktor.client.HttpClient
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
@@ -40,7 +37,8 @@ val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 val objectMapper: ObjectMapper = jacksonObjectMapper()
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .registerModule(JavaTimeModule())
-val log: Logger = LoggerFactory.getLogger("sputnik")
+val log: Logger = LoggerFactory.getLogger("sparkel-inntekt")
+const val Inntektshistorikk = "Inntektshistorikk"
 
 @FlowPreview
 fun main() = runBlocking {
@@ -71,14 +69,7 @@ fun launchApplication(
             }
         }.start(wait = false)
 
-        val stsRestClient = StsRestClient(environment.stsBaseUrl, serviceUser)
-        val fpsakRestClient = FpsakRestClient(
-            baseUrl = environment.fpsakBaseUrl,
-            httpClient = simpleHttpClient(),
-            stsRestClient = stsRestClient
-        )
-
-        val løsningService = LøsningService(fpsakRestClient)
+        val løsningService = LøsningService()
 
         launchFlow(environment, serviceUser, løsningService)
 
@@ -86,12 +77,6 @@ fun launchApplication(
             server.stop(10, 10, TimeUnit.SECONDS)
             applicationContext.close()
         })
-    }
-}
-
-private fun simpleHttpClient(serializer: JacksonSerializer? = JacksonSerializer()) = HttpClient() {
-    install(JsonFeature) {
-        this.serializer = serializer
     }
 }
 
@@ -107,7 +92,7 @@ suspend fun launchFlow(
         .apply { subscribe(listOf(environment.spleisBehovtopic)) }
         .asFlow()
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
-        .filter { (_, value) -> value["@behov"].any { it.asText() == "Foreldrepenger" } }
+        .filter { (_, value) -> value["@behov"].any { it.asText() == Inntektshistorikk } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }
         .onEach { (key, _) -> log.info("løser behov: {}", keyValue("behovsid", key)) }
         .collect { (key, value) -> behovProducer.send(ProducerRecord(environment.spleisBehovtopic, key, value)) }

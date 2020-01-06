@@ -1,4 +1,4 @@
-package no.nav.helse.sputnik
+package no.nav.helse.inntekt
 
 import io.ktor.application.call
 import io.ktor.http.ContentType
