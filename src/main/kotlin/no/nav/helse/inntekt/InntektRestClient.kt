@@ -34,11 +34,13 @@ class InntektRestClient(
                 "maanedFom" to "2019-01",
                 "maanedTom" to "2019-03"
             )
-        }.let { objectMapper.readValue<ArrayNode>(it.readText()) }
+        }
+            .let { objectMapper.readValue<ArrayNode>(it.readText()) }
+            .map { it.toInntekt() }
 
 }
 
-fun JsonNode.toInntekt() = Inntekt(
+private fun JsonNode.toInntekt() = Inntekt(
     beløp = this["beloep"].asDouble(),
     inntektstype = Inntektstype.valueOf(this["inntektType"].textValue())
 )

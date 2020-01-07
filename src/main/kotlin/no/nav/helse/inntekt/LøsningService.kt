@@ -9,7 +9,7 @@ class LøsningService(val inntektsRestClient: InntektRestClient) {
 
     private suspend fun hentLøsning(behov: JsonNode): Løsning {
         log.info("hentet inntekter for behov: ${behov["@id"].asText()}")
-        return Løsning(inntektsRestClient.hentInntektsliste(behov["aktørId"].asText()).map { it.toInntekt() })
+        return Løsning(inntektsRestClient.hentInntektsliste(behov["aktørId"].asText()))
     }
 }
 

@@ -90,20 +90,6 @@ internal class AppTest : CoroutineScope {
         }
     }
 
-    private val tokenExpirationTime get() = LocalDateTime.now().plusDays(1).toEpochSecond(ZoneOffset.UTC)
-
-    private val mockStsRestClient = StsRestClient(
-        baseUrl = "",
-        serviceUser = ServiceUser("yes", "yes"),
-        httpClient = HttpClient(MockEngine) {
-            engine {
-                addHandler {
-                    respond("""{"access_token":"token", "expires_in":$tokenExpirationTime, "token_type":"yes"}""")
-                }
-            }
-        })
-
-
     private val inntektsRestClient = InntektRestClient("http://baseUrl.local", mockHttpClient, mockStsRestClient)
     private val løsningService = LøsningService(inntektsRestClient)
 
