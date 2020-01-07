@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.install
+import io.ktor.client.HttpClient
+import io.ktor.client.features.json.JacksonSerializer
+import io.ktor.client.features.json.JsonFeature
+import io.ktor.features.ContentNegotiation
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
@@ -69,7 +73,13 @@ fun launchApplication(
             }
         }.start(wait = false)
 
-        val løsningService = LøsningService()
+        val stsRestClient = StsRestClient(environment.stsBaseUrl, serviceUser)
+        val inntektRestClient = InntektRestClient(
+            baseUrl = environment.inntektskomponentBaseUrl,
+            httpClient = simpleHttpClient(),
+            stsRestClient = stsRestClient
+        )
+        val løsningService = LøsningService(inntektRestClient)
 
         launchFlow(environment, serviceUser, løsningService)
 
@@ -77,6 +87,12 @@ fun launchApplication(
             server.stop(10, 10, TimeUnit.SECONDS)
             applicationContext.close()
         })
+    }
+}
+
+private fun simpleHttpClient() = HttpClient() {
+    install(JsonFeature) {
+        this.serializer = JacksonSerializer()
     }
 }
 

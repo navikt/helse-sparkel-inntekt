@@ -2,8 +2,15 @@ package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.mockk.every
-import io.mockk.mockk
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.features.json.JacksonSerializer
+import io.ktor.client.features.json.JsonFeature
+import io.ktor.features.ContentNegotiation
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.fullPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
@@ -26,6 +33,8 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 
@@ -50,8 +59,9 @@ internal class AppTest : CoroutineScope {
     private val environment = Environment(
         kafkaBootstrapServers = embeddedKafkaEnvironment.brokersURL,
         spleisBehovtopic = testTopic,
-        fpsakBaseUrl = "http://fpsakBaseUrl.local"
+        inntektskomponentBaseUrl = "http://inntektskomponenten.local"
     )
+
     private val testKafkaProperties = loadBaseConfig(environment, serviceUser).apply {
         this[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "PLAINTEXT"
         this[SaslConfigs.SASL_MECHANISM] = "PLAIN"
@@ -66,12 +76,36 @@ internal class AppTest : CoroutineScope {
         it.subscribe(listOf(testTopic))
     }
 
-//    private val mockGenerator = mockk<ResponseGenerator>(relaxed = true).apply {
-//        every { foreldrepenger() }.returns("[]")
-//        every { svangerskapspenger() }.returns("[]")
-//    }
+    private val mockHttpClient = HttpClient(MockEngine) {
+        install(JsonFeature) {
+            serializer = JacksonSerializer()
+        }
+        engine {
+            addHandler { request ->
+                when {
+                    request.url.fullPath.startsWith("/api/v1/hentinntektliste") -> respond("""[]""")
+                    else -> respondError(HttpStatusCode.InternalServerError)
+                }
+            }
+        }
+    }
 
-    private val løsningService = LøsningService()
+    private val tokenExpirationTime get() = LocalDateTime.now().plusDays(1).toEpochSecond(ZoneOffset.UTC)
+
+    private val mockStsRestClient = StsRestClient(
+        baseUrl = "",
+        serviceUser = ServiceUser("yes", "yes"),
+        httpClient = HttpClient(MockEngine) {
+            engine {
+                addHandler {
+                    respond("""{"access_token":"token", "expires_in":$tokenExpirationTime, "token_type":"yes"}""")
+                }
+            }
+        })
+
+
+    private val inntektsRestClient = InntektRestClient("http://baseUrl.local", mockHttpClient, mockStsRestClient)
+    private val løsningService = LøsningService(inntektsRestClient)
 
     @FlowPreview
     @BeforeAll
@@ -80,39 +114,40 @@ internal class AppTest : CoroutineScope {
         job = GlobalScope.launch { launchFlow(environment, serviceUser, løsningService, testKafkaProperties) }
     }
 
-//    @Test
-//    fun `skal motta behov og produsere løsning`() {
-//        val behov = """{"@id": "behovsid", "@behov":["Foreldrepenger", "Sykepengehistorikk"], "aktørId":"123"}"""
-//        behovProducer.send(ProducerRecord(testTopic, "123", objectMapper.readValue(behov)))
-//
-//        assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
-//            assertEquals(1, alleSvar.medId("behovsid").size)
-//
-//            val svar = alleSvar.first()
-//            assertEquals("123", svar["aktørId"].asText())
-//            assertTrue(svar["@løsning"].hasNonNull("Foreldrepenger"))
-//        }
-//    }
-//
-//    @Test
-//    fun `skal kun behandle opprinnelig behov`() {
-//        val behovAlleredeBesvart =
-//            """{"@id": "1", "@behov":["Foreldrepenger", "Sykepengehistorikk"], "aktørId":"123", "@løsning": { "Sykepengehistorikk": [] }}"""
-//        val behovSomTrengerSvar = """{"@id": "2", "@behov":["Foreldrepenger", "Sykepengehistorikk"], "aktørId":"123"}"""
-//        behovProducer.send(ProducerRecord(testTopic, "1", objectMapper.readValue(behovAlleredeBesvart)))
-//        behovProducer.send(ProducerRecord(testTopic, "2", objectMapper.readValue(behovSomTrengerSvar)))
-//
-//        assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
-//            assertEquals(1, alleSvar.medId("1").size)
-//            assertEquals(1, alleSvar.medId("2").size)
-//
-//            val svar = alleSvar.medId("2").first()
-//            assertEquals("123", svar["aktørId"].asText())
-//
-//            assertTrue(svar["@løsning"].hasNonNull("Foreldrepenger"))
-//            assertEquals("2", svar["@id"].asText())
-//        }
-//    }
+    @Test
+    fun `skal motta behov og produsere løsning`() {
+        val behov = """{"@id": "behovsid", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123"}"""
+        behovProducer.send(ProducerRecord(testTopic, "123", objectMapper.readValue(behov)))
+
+        assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
+            assertEquals(1, alleSvar.medId("behovsid").size)
+
+            val svar = alleSvar.first()
+            assertEquals("123", svar["aktørId"].asText())
+            assertTrue(svar["@løsning"].hasNonNull("Inntekter"))
+        }
+    }
+
+    @Test
+    fun `skal kun behandle opprinnelig behov`() {
+        val behovAlleredeBesvart =
+            """{"@id": "1", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123", "@løsning": { "Sykepengehistorikk": [] }}"""
+        val behovSomTrengerSvar =
+            """{"@id": "2", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123"}"""
+        behovProducer.send(ProducerRecord(testTopic, "1", objectMapper.readValue(behovAlleredeBesvart)))
+        behovProducer.send(ProducerRecord(testTopic, "2", objectMapper.readValue(behovSomTrengerSvar)))
+
+        assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
+            assertEquals(1, alleSvar.medId("1").size)
+            assertEquals(1, alleSvar.medId("2").size)
+
+            val svar = alleSvar.medId("2").first()
+            assertEquals("123", svar["aktørId"].asText())
+
+            assertTrue(svar["@løsning"].hasNonNull("Inntekter"))
+            assertEquals("2", svar["@id"].asText())
+        }
+    }
 
     private fun List<JsonNode>.medId(id: String) = filter { it["@id"].asText() == id }
 
