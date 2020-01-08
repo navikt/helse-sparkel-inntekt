@@ -13,7 +13,7 @@ internal class StsRestClientTest {
     private val mockClient = HttpClient(MockEngine) {
         engine {
             addHandler { request ->
-                if (!request.headers.contains("Authorization", "Basic c3J2c3B1dG5pazp5ZXNfc2VjdXJlIQ==")) {
+                if (!request.headers.contains("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")) {
                     error("Invalid credentials")
                 }
                 when (request.url.fullPath) {
@@ -25,7 +25,7 @@ internal class StsRestClientTest {
             }
         }
     }
-    private val stsClient = StsRestClient(baseUrl, ServiceUser("srvsputnik", "yes_secure!"), mockClient)
+    private val stsClient = StsRestClient(baseUrl, ServiceUser("username", "password"), mockClient)
 
     @Test
     fun `skal parse token fra sts`() {
