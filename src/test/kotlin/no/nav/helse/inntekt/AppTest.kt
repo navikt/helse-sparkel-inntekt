@@ -2,15 +2,8 @@ package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.respondError
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.fullPath
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
@@ -33,8 +26,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 
@@ -76,21 +67,10 @@ internal class AppTest : CoroutineScope {
         it.subscribe(listOf(testTopic))
     }
 
-    private val mockHttpClient = HttpClient(MockEngine) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer()
-        }
-        engine {
-            addHandler { request ->
-                when {
-                    request.url.fullPath.startsWith("/api/v1/hentinntektliste") -> respond("""[]""")
-                    else -> respondError(HttpStatusCode.InternalServerError)
-                }
-            }
-        }
+    private val mockResponseGenerator = mockk<ResponseGenerator>(relaxed = true) {
+        every { hentInntekter() } returns inntekterEmptyResponse()
     }
-
-    private val inntektsRestClient = InntektRestClient("http://baseUrl.local", mockHttpClient, mockStsRestClient)
+    private val inntektsRestClient = InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient)
     private val løsningService = LøsningService(inntektsRestClient)
 
     @FlowPreview
