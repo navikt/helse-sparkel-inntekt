@@ -1,7 +1,6 @@
 package no.nav.helse.inntekt
 
 import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -27,9 +26,7 @@ internal class InntektRestClientTest {
         )
     }
 
-    private val mockResponseGenerator = mockk<ResponseGenerator>(relaxed = true) {
-        every { hentInntekter() } returns inntekterEmptyResponse()
-    }
+    private val mockResponseGenerator = defaultMockResponseGenerator()
     private val inntektRestClient = InntektRestClient(
         baseUrl = "https://faktiskUrl",
         httpClient = mockHttpClient(mockResponseGenerator),

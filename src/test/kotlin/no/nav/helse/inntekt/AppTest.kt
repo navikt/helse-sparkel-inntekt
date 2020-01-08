@@ -2,8 +2,6 @@ package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
@@ -67,10 +65,9 @@ internal class AppTest : CoroutineScope {
         it.subscribe(listOf(testTopic))
     }
 
-    private val mockResponseGenerator = mockk<ResponseGenerator>(relaxed = true) {
-        every { hentInntekter() } returns inntekterEmptyResponse()
-    }
-    private val inntektsRestClient = InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient)
+    private val mockResponseGenerator = defaultMockResponseGenerator()
+    private val inntektsRestClient =
+        InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient)
     private val løsningService = LøsningService(inntektsRestClient)
 
     @FlowPreview

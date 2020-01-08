@@ -8,11 +8,17 @@ import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
+import io.mockk.every
+import io.mockk.mockk
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 interface ResponseGenerator {
     fun hentInntekter() = inntekterEmptyResponse()
+}
+
+internal fun defaultMockResponseGenerator() = mockk<ResponseGenerator>(relaxed = true) {
+    every { hentInntekter() } returns inntekterEmptyResponse()
 }
 
 internal fun mockHttpClient(mockResponseGenerator: ResponseGenerator) = HttpClient(MockEngine) {
