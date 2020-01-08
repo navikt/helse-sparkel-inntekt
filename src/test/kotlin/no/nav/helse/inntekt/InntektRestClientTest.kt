@@ -27,10 +27,12 @@ internal class InntektRestClientTest {
         )
     }
 
-    private val baseUrl = "https://faktiskUrl"
-
     private val mockResponseGenerator = mockk<ResponseGenerator>(relaxed = true) {
         every { hentInntekter() } returns inntekterEmptyResponse()
     }
-    private val inntektRestClient = InntektRestClient(baseUrl, mockHttpClient(mockResponseGenerator), mockStsRestClient)
+    private val inntektRestClient = InntektRestClient(
+        baseUrl = "https://faktiskUrl",
+        httpClient = mockHttpClient(mockResponseGenerator),
+        stsRestClient = mockStsRestClient
+    )
 }
