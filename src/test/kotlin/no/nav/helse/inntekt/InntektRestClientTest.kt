@@ -18,10 +18,10 @@ internal class InntektRestClientTest {
     @Test
     fun `liste med en inntekt skal gi tilsvarende liste med et inntektobjekt`() = runBlocking {
         mockResponseGenerator.apply {
-            every { hentInntekter() } returns """[{"beloep": 100.00, "inntektType": "LOENNSINNTEKT", "ubruktFelt": "Kode"}]"""
+            every { hentInntekter() } returns """[{"beloep": 100.00, "inntektType": "LOENNSINNTEKT", "ubruktFelt": "Kode", "arbeidsforholdREF": "orgnummer"}]"""
         }
         assertEquals(
-            listOf(Inntekt(beløp = 100.0, inntektstype = Inntektstype.LOENNSINNTEKT)),
+            listOf(Inntekt(beløp = 100.0, inntektstype = Inntektstype.LOENNSINNTEKT, orgnummer = "orgnummer")),
             inntektRestClient.hentInntektsliste("AktørId")
         )
     }

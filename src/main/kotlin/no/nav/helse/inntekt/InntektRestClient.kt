@@ -42,10 +42,11 @@ class InntektRestClient(
 
 private fun JsonNode.toInntekt() = Inntekt(
     beløp = this["beloep"].asDouble(),
-    inntektstype = Inntektstype.valueOf(this["inntektType"].textValue())
+    inntektstype = Inntektstype.valueOf(this["inntektType"].textValue()),
+    orgnummer = this["arbeidsforholdREF"].textValue()
 )
 
-data class Inntekt(val beløp: Double, val inntektstype: Inntektstype)
+data class Inntekt(val beløp: Double, val inntektstype: Inntektstype, val orgnummer: String)
 
 enum class Inntektstype {
     LOENNSINNTEKT,
