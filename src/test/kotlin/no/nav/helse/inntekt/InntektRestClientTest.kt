@@ -4,6 +4,7 @@ import io.mockk.every
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.YearMonth
 
 internal class InntektRestClientTest {
 
@@ -11,7 +12,7 @@ internal class InntektRestClientTest {
     fun `tom liste json response skal gi tom liste med inntekter`() = runBlocking {
         assertEquals(
             emptyList<Inntekt>(),
-            inntektRestClient.hentInntektsliste("AktørId")
+            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now())
         )
     }
 
@@ -22,7 +23,7 @@ internal class InntektRestClientTest {
         }
         assertEquals(
             listOf(Inntekt(beløp = 100.0, inntektstype = Inntektstype.LOENNSINNTEKT, orgnummer = "orgnummer")),
-            inntektRestClient.hentInntektsliste("AktørId")
+            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now())
         )
     }
 

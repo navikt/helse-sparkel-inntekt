@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
+import java.time.YearMonth
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 
@@ -79,7 +80,7 @@ internal class AppTest : CoroutineScope {
 
     @Test
     fun `skal motta behov og produsere løsning`() {
-        val behov = """{"@id": "behovsid", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123"}"""
+        val behov = """{"@id": "behovsid", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}"}"""
         behovProducer.send(ProducerRecord(testTopic, "123", objectMapper.readValue(behov)))
 
         assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
@@ -94,9 +95,9 @@ internal class AppTest : CoroutineScope {
     @Test
     fun `skal kun behandle opprinnelig behov`() {
         val behovAlleredeBesvart =
-            """{"@id": "1", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123", "@løsning": { "Sykepengehistorikk": [] }}"""
+            """{"@id": "1", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}", "@løsning": { "Sykepengehistorikk": [] }}"""
         val behovSomTrengerSvar =
-            """{"@id": "2", "@behov":["$Inntektshistorikk", "Sykepengehistorikk"], "aktørId":"123"}"""
+            """{"@id": "2", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}"}"""
         behovProducer.send(ProducerRecord(testTopic, "1", objectMapper.readValue(behovAlleredeBesvart)))
         behovProducer.send(ProducerRecord(testTopic, "2", objectMapper.readValue(behovSomTrengerSvar)))
 
