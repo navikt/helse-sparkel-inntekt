@@ -12,13 +12,14 @@ import io.ktor.client.response.readText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
+import java.time.YearMonth
 
 class InntektRestClient(
     private val baseUrl: String,
     private val httpClient: HttpClient,
     private val stsRestClient: StsRestClient
 ) {
-    suspend fun hentInntektsliste(aktørId: String) =
+    suspend fun hentInntektsliste(aktørId: String, fom: YearMonth, tom: YearMonth) =
         httpClient.request<HttpResponse>("$baseUrl/api/v1/hentinntektliste") {
             method = HttpMethod.Post
             header("Authorization", "Bearer ${stsRestClient.token()}")
@@ -31,8 +32,8 @@ class InntektRestClient(
                 ),
                 "ainntektsfilter" to "8-30",
                 "formaal" to "Sykepenger",
-                "maanedFom" to "2019-01",
-                "maanedTom" to "2019-03"
+                "maanedFom" to fom,
+                "maanedTom" to tom
             )
         }
             .let { objectMapper.readValue<ArrayNode>(it.readText()) }
