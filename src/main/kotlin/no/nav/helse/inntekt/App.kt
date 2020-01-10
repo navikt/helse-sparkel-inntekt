@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
@@ -91,7 +92,10 @@ fun launchApplication(
 
 private fun simpleHttpClient() = HttpClient() {
     install(JsonFeature) {
-        this.serializer = JacksonSerializer()
+        this.serializer = JacksonSerializer {
+            registerModule(JavaTimeModule())
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        }
     }
 }
 
@@ -109,6 +113,7 @@ suspend fun launchFlow(
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
         .filter { (_, value) -> value["@behov"].any { it.asText() == Inntektsberegning } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }
+        .catch { log.error("Feil ved løsing av behov", it) }
         .onEach { (key, _) -> log.info("løser behov: {}", keyValue("behovsid", key)) }
         .collect { (key, value) -> behovProducer.send(ProducerRecord(environment.spleisBehovtopic, key, value)) }
 }
