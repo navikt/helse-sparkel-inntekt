@@ -19,7 +19,12 @@ class InntektRestClient(
     private val httpClient: HttpClient,
     private val stsRestClient: StsRestClient
 ) {
-    suspend fun hentInntektsliste(aktørId: String, fom: YearMonth, tom: YearMonth) =
+    suspend fun hentInntektsliste(
+        aktørId: String,
+        fom: YearMonth,
+        tom: YearMonth,
+        filter: String
+    ) =
         httpClient.request<HttpResponse>("$baseUrl/api/v1/hentinntektliste") {
             method = HttpMethod.Post
             header("Authorization", "Bearer ${stsRestClient.token()}")
@@ -30,7 +35,7 @@ class InntektRestClient(
                     "identifikator" to aktørId,
                     "aktoerType" to "AKTOER_ID"
                 ),
-                "ainntektsfilter" to "8-30",
+                "ainntektsfilter" to filter,
                 "formaal" to "Sykepenger",
                 "maanedFom" to fom,
                 "maanedTom" to tom
@@ -38,7 +43,6 @@ class InntektRestClient(
         }
             .let { objectMapper.readValue<ArrayNode>(it.readText()) }
             .map { it.toInntekt() }
-
 }
 
 private fun JsonNode.toInntekt() = Inntekt(

@@ -1,7 +1,6 @@
 package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
@@ -80,8 +79,9 @@ internal class AppTest : CoroutineScope {
 
     @Test
     fun `skal motta behov og produsere løsning`() {
-        val behov = """{"@id": "behovsid", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}"}"""
-        behovProducer.send(ProducerRecord(testTopic, "123", objectMapper.readValue(behov)))
+        val start = YearMonth.of(2020, 1)
+        val slutt = YearMonth.of(2021, 1)
+        behovProducer.send(ProducerRecord(testTopic, "123", behov(start, slutt)))
 
         assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
             assertEquals(1, alleSvar.medId("behovsid").size)
@@ -94,12 +94,13 @@ internal class AppTest : CoroutineScope {
 
     @Test
     fun `skal kun behandle opprinnelig behov`() {
-        val behovAlleredeBesvart =
-            """{"@id": "1", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}", "@løsning": { "Sykepengehistorikk": [] }}"""
-        val behovSomTrengerSvar =
-            """{"@id": "2", "@behov":["$Inntektsberegning", "Sykepengehistorikk"], "aktørId":"123", "beregningStart": "${YearMonth.now()}", "beregningSlutt": "${YearMonth.now()}"}"""
-        behovProducer.send(ProducerRecord(testTopic, "1", objectMapper.readValue(behovAlleredeBesvart)))
-        behovProducer.send(ProducerRecord(testTopic, "2", objectMapper.readValue(behovSomTrengerSvar)))
+        val start = YearMonth.of(2020, 1)
+        val slutt = YearMonth.of(2021, 1)
+        val behovAlleredeBesvart = behovMedLøsning(start, slutt, "1")
+        val behovSomTrengerSvar = behov(start, slutt, "2")
+
+        behovProducer.send(ProducerRecord(testTopic, "1", behovAlleredeBesvart))
+        behovProducer.send(ProducerRecord(testTopic, "2", behovSomTrengerSvar))
 
         assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
             assertEquals(1, alleSvar.medId("1").size)
@@ -130,4 +131,17 @@ internal class AppTest : CoroutineScope {
         job.cancel()
         embeddedKafkaEnvironment.close()
     }
+
+    private fun behov(start: YearMonth, slutt: YearMonth, id: String = "behovsid") = objectMapper.valueToTree<JsonNode>(behovMap(start, slutt, id))
+
+    private fun behovMedLøsning(start: YearMonth, slutt: YearMonth, id: String = "behovsid") =
+        objectMapper.valueToTree<JsonNode>(behovMap(start, slutt, id) + mapOf("@løsning" to Løsning(emptyList())))
+
+    private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
+        "@id" to id,
+        "@behov" to listOf(Inntektsberegning, "EgenAnsatt"),
+        "aktørId" to "123",
+        "beregningStart" to "$start",
+        "beregningSlutt" to "$slutt"
+    )
 }
