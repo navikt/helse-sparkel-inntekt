@@ -11,10 +11,19 @@ class LøsningService(val inntektsRestClient: InntektRestClient) {
 
     private suspend fun hentLøsning(behov: JsonNode): Løsning {
         log.info("hentet inntekter for behov: ${behov["@id"].asText()}")
+        val vedtaksid = behov["vedtaksperiodeId"].asText()
         val beregningStart = YearMonth.parse(behov["beregningStart"].asText())
         val beregningSlutt = YearMonth.parse(behov["beregningSlutt"].asText())
         val filter = filterForPeriode(beregningStart, beregningSlutt)
-        return Løsning(inntektsRestClient.hentInntektsliste(behov["aktørId"].asText(), beregningStart, beregningSlutt, filter))
+        return Løsning(
+            inntektsRestClient.hentInntektsliste(
+                behov["aktørId"].asText(),
+                beregningStart,
+                beregningSlutt,
+                filter,
+                vedtaksid
+            )
+        )
     }
 
     private fun filterForPeriode(beregningStart: YearMonth, beregningSlutt: YearMonth): String {

@@ -141,6 +141,7 @@ internal class AppTest : CoroutineScope {
         "@id" to id,
         "@behov" to listOf(Inntektsberegning, "EgenAnsatt"),
         "aktørId" to "123",
+        "vedtaksperiodeId" to "vedtaksperiodeId",
         "beregningStart" to "$start",
         "beregningSlutt" to "$slutt"
     )

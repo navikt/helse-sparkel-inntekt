@@ -12,7 +12,7 @@ internal class InntektRestClientTest {
     fun `tom liste json response skal gi tom liste med inntekter`() = runBlocking {
         assertEquals(
             emptyList<Inntekt>(),
-            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now(), "filter")
+            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now(), "filter", "callid")
         )
     }
 
@@ -23,7 +23,7 @@ internal class InntektRestClientTest {
         }
         assertEquals(
             listOf(Inntekt(beløp = 100.0, inntektstype = Inntektstype.LOENNSINNTEKT, orgnummer = "orgnummer")),
-            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now(), "filter")
+            inntektRestClient.hentInntektsliste("AktørId", YearMonth.now(), YearMonth.now(), "filter", "callid")
         )
     }
 

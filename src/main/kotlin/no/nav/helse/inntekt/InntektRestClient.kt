@@ -23,11 +23,13 @@ class InntektRestClient(
         aktørId: String,
         fom: YearMonth,
         tom: YearMonth,
-        filter: String
+        filter: String,
+        callId: String
     ) =
         httpClient.request<HttpResponse>("$baseUrl/api/v1/hentinntektliste") {
             method = HttpMethod.Post
             header("Authorization", "Bearer ${stsRestClient.token()}")
+            header("Nav-Call-Id", callId)
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = mapOf(
@@ -36,7 +38,8 @@ class InntektRestClient(
                     "aktoerType" to "AKTOER_ID"
                 ),
                 "ainntektsfilter" to filter,
-                "formaal" to "Sykepenger",
+                // TODO: Bruker Foreldrepenger midlertidig på grunn av mangel på tilgang til 8-28 og 8-30 som Sykepenger
+                "formaal" to "Foreldrepenger",
                 "maanedFom" to fom,
                 "maanedTom" to tom
             )

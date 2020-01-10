@@ -26,7 +26,17 @@ internal class LøsningServiceTest {
 
         løsningService.løsBehov(behov(start, slutt))
 
-        verify { runBlocking { inntektRestClient.hentInntektsliste("123", start, slutt, "8-28") } }
+        verify {
+            runBlocking {
+                inntektRestClient.hentInntektsliste(
+                    aktørId = "123",
+                    fom = start,
+                    tom = slutt,
+                    filter = "8-28",
+                    callId = "vedtaksperiodeId"
+                )
+            }
+        }
     }
 
     @Test
@@ -36,7 +46,17 @@ internal class LøsningServiceTest {
 
         løsningService.løsBehov(behov(start, slutt))
 
-        verify { runBlocking { inntektRestClient.hentInntektsliste("123", start, slutt, "8-30") } }
+        verify {
+            runBlocking {
+                inntektRestClient.hentInntektsliste(
+                    aktørId = "123",
+                    fom = start,
+                    tom = slutt,
+                    filter = "8-30",
+                    callId = "vedtaksperiodeId"
+                )
+            }
+        }
     }
 
     @Test
@@ -52,6 +72,7 @@ internal class LøsningServiceTest {
             "@id" to "behovsid",
             "@behov" to listOf(Inntektsberegning, "Sykepengehistorikk"),
             "aktørId" to "123",
+            "vedtaksperiodeId" to "vedtaksperiodeId",
             "beregningStart" to "$start",
             "beregningSlutt" to "$slutt"
         )
