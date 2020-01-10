@@ -113,7 +113,7 @@ suspend fun launchFlow(
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
         .filter { (_, value) -> value["@behov"].any { it.asText() == Inntektsberegning } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }
-        .filterNotNull()
+        .filter { (_, value) -> value != null }
         .onEach { (key, _) -> log.info("løser behov: {}", keyValue("behovsid", key)) }
         .collect { (key, value) -> behovProducer.send(ProducerRecord(environment.spleisBehovtopic, key, value)) }
 }

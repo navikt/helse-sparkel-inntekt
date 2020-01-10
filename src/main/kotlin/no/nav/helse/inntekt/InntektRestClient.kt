@@ -1,7 +1,6 @@
 package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
@@ -45,17 +44,39 @@ class InntektRestClient(
                 "maanedTom" to tom
             )
         }
-            .let { objectMapper.readValue<ArrayNode>(it.readText()) }
-            .map { it.toInntekt() }
+            .let { toMånedListe(objectMapper.readValue(it.readText())) }
 }
 
-private fun JsonNode.toInntekt() = Inntekt(
-    beløp = this["beloep"].asDouble(),
-    inntektstype = Inntektstype.valueOf(this["inntektType"].textValue()),
-    orgnummer = this["arbeidsforholdREF"].textValue()
+
+
+private fun toMånedListe(node: JsonNode) = node["arbeidsInntektMaaned"].map(::tilMåned)
+
+private fun toInntekt(node: JsonNode) = Inntekt(
+    beløp = node["beloep"].asDouble(),
+    inntektstype = Inntektstype.valueOf(node["inntektType"].textValue()),
+    orgnummer = node["virksomhet"].let {
+        if (it["aktoerType"].asText() == "ORGANISASJON") {
+            it["identifikator"].asText()
+        } else {
+            null
+        }
+    }
 )
 
-data class Inntekt(val beløp: Double, val inntektstype: Inntektstype, val orgnummer: String)
+private fun tilMåned(node: JsonNode) = Måned(
+    YearMonth.parse(node["aarMaaned"].asText()),
+    node["arbeidsInntektInformasjon"]["inntektListe"].map(::toInntekt)
+)
+
+data class Måned(
+    val årMåned: YearMonth,
+    val inntektsliste: List<Inntekt>
+)
+data class Inntekt(
+    val beløp: Double,
+    val inntektstype: Inntektstype,
+    val orgnummer: String?
+)
 
 enum class Inntektstype {
     LOENNSINNTEKT,
