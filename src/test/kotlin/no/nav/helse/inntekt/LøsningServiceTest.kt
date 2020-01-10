@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.YearMonth
@@ -60,11 +61,13 @@ internal class LøsningServiceTest {
     }
 
     @Test
-    fun `behov med beregningsperiode på noe annet enn 3 eller 12 måneder skal føre til feil`() {
+    fun `behov med beregningsperiode på noe annet enn 3 eller 12 måneder skal føre til null`() {
         val start = YearMonth.of(2020, 1)
         val slutt = YearMonth.of(2020, 2)
 
-        assertThrows<RuntimeException> { runBlocking { løsningService.løsBehov(behov(start, slutt)) } }
+        runBlocking {
+            assertNull(løsningService.løsBehov(behov(start, slutt)))
+        }
     }
 
     private fun behov(start: YearMonth, slutt: YearMonth) = objectMapper.valueToTree<JsonNode>(

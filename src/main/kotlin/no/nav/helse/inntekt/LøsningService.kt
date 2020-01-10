@@ -6,7 +6,7 @@ import net.logstash.logback.argument.StructuredArguments.keyValue
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
-class LøsningService(val inntektsRestClient: InntektRestClient) {
+class LøsningService(private val inntektsRestClient: InntektRestClient) {
     suspend fun løsBehov(behov: JsonNode): JsonNode? = hentLøsning(behov)?.let { løsning ->
         behov.deepCopy<ObjectNode>().set("@løsning", objectMapper.valueToTree(løsning))
     }
@@ -16,8 +16,8 @@ class LøsningService(val inntektsRestClient: InntektRestClient) {
         val vedtaksid = behov["vedtaksperiodeId"].asText()
         val beregningStart = YearMonth.parse(behov["beregningStart"].asText())
         val beregningSlutt = YearMonth.parse(behov["beregningSlutt"].asText())
-        val filter = filterForPeriode(beregningStart, beregningSlutt)
         return try {
+            val filter = filterForPeriode(beregningStart, beregningSlutt)
             Løsning(
                 inntektsRestClient.hentInntektsliste(
                     behov["aktørId"].asText(),
