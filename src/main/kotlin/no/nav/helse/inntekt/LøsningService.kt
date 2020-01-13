@@ -45,5 +45,5 @@ class LøsningService(private val inntektsRestClient: InntektRestClient) {
 }
 
 data class Løsning(
-    @JvmField val Inntekter: List<Måned>
+    @JvmField val Inntektsberegning: List<Måned>
 )

@@ -88,8 +88,8 @@ internal class AppTest : CoroutineScope {
 
             val svar = alleSvar.first()
             assertEquals("123", svar["aktørId"].asText())
-            assertTrue(svar["@løsning"].hasNonNull("Inntekter"))
-            assertEquals(2, svar["@løsning"]["Inntekter"].size())
+            assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
+            assertEquals(2, svar["@løsning"][Inntektsberegning].size())
         }
     }
 
@@ -110,7 +110,7 @@ internal class AppTest : CoroutineScope {
             val svar = alleSvar.medId("2").first()
             assertEquals("123", svar["aktørId"].asText())
 
-            assertTrue(svar["@løsning"].hasNonNull("Inntekter"))
+            assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
             assertEquals("2", svar["@id"].asText())
         }
     }
