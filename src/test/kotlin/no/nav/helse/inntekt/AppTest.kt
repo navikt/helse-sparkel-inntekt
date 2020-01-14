@@ -79,7 +79,7 @@ internal class AppTest : CoroutineScope {
 
     @Test
     fun `skal motta behov og produsere løsning`() {
-        val start = YearMonth.of(2020, 1)
+        val start = YearMonth.of(2020, 2)
         val slutt = YearMonth.of(2021, 1)
         behovProducer.send(ProducerRecord(testTopic, "123", behov(start, slutt)))
 
@@ -95,7 +95,7 @@ internal class AppTest : CoroutineScope {
 
     @Test
     fun `skal kun behandle opprinnelig behov`() {
-        val start = YearMonth.of(2020, 1)
+        val start = YearMonth.of(2020, 2)
         val slutt = YearMonth.of(2021, 1)
         val behovAlleredeBesvart = behovMedLøsning(start, slutt, "1")
         val behovSomTrengerSvar = behov(start, slutt, "2")

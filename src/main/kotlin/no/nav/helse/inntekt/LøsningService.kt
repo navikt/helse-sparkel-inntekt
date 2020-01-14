@@ -35,8 +35,8 @@ class LøsningService(private val inntektsRestClient: InntektRestClient) {
 
     private fun filterForPeriode(beregningStart: YearMonth, beregningSlutt: YearMonth): String {
         return when {
-            månederMellom(beregningStart, beregningSlutt) == 12L -> "8-30"
-            månederMellom(beregningStart, beregningSlutt) == 3L -> "8-28"
+            månederMellom(beregningStart, beregningSlutt) == 11L -> "8-30"
+            månederMellom(beregningStart, beregningSlutt) == 2L -> "8-28"
             else -> error("Ukjent beregning for periode på ${månederMellom(beregningStart, beregningSlutt)} måneder")
         }
     }

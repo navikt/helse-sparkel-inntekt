@@ -6,7 +6,6 @@ import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.YearMonth
 
 internal class LøsningServiceTest {
@@ -23,7 +22,7 @@ internal class LøsningServiceTest {
     @Test
     fun `behov med beregningsperiode på 3 måneder skal bruke 8-28 filter ved henting av inntektsdata`() = runBlocking {
         val start = YearMonth.of(2020, 1)
-        val slutt = YearMonth.of(2020, 4)
+        val slutt = YearMonth.of(2020, 3)
 
         løsningService.løsBehov(behov(start, slutt))
 
@@ -42,7 +41,7 @@ internal class LøsningServiceTest {
 
     @Test
     fun `behov med beregningsperiode på 12 måneder skal bruke 8-30 filter ved henting av inntektsdata`() = runBlocking {
-        val start = YearMonth.of(2020, 1)
+        val start = YearMonth.of(2020, 2)
         val slutt = YearMonth.of(2021, 1)
 
         løsningService.løsBehov(behov(start, slutt))
