@@ -23,7 +23,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
@@ -108,12 +107,12 @@ suspend fun launchFlow(
 ) {
     val behovProducer = KafkaProducer<String, JsonNode>(baseConfig.toProducerConfig())
     KafkaConsumer<String, JsonNode>(baseConfig.toConsumerConfig())
-        .apply { subscribe(listOf(environment.spleisBehovtopic)) }
+        .apply { subscribe(listOf(environment.spleisRapidtopic)) }
         .asFlow()
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
         .filter { (_, value) -> value.hasNonNull("@behov") && value["@behov"].any { it.asText() == Inntektsberegning } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }
         .filter { (_, value) -> value != null }
         .onEach { (key, _) -> log.info("løser behov: {}", keyValue("behovsid", key)) }
-        .collect { (key, value) -> behovProducer.send(ProducerRecord(environment.spleisBehovtopic, key, value)) }
+        .collect { (key, value) -> behovProducer.send(ProducerRecord(environment.spleisRapidtopic, key, value)) }
 }

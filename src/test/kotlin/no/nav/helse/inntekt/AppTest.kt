@@ -31,7 +31,7 @@ import kotlin.coroutines.CoroutineContext
 internal class AppTest : CoroutineScope {
     override val coroutineContext: CoroutineContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
-    private val testTopic = "privat-helse-sykepenger-behov"
+    private val testTopic = "privat-helse-sykepenger-rapid-v1"
     private val topicInfos = listOf(
         KafkaEnvironment.TopicInfo(testTopic)
     )
@@ -47,7 +47,7 @@ internal class AppTest : CoroutineScope {
     private val serviceUser = ServiceUser("user", "password")
     private val environment = Environment(
         kafkaBootstrapServers = embeddedKafkaEnvironment.brokersURL,
-        spleisBehovtopic = testTopic,
+        spleisRapidtopic = testTopic,
         inntektskomponentBaseUrl = "http://inntektskomponenten.local"
     )
 
