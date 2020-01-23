@@ -65,7 +65,7 @@ private fun toInntekt(node: JsonNode) = Inntekt(
 
 private fun tilMåned(node: JsonNode) = Måned(
     YearMonth.parse(node["aarMaaned"].asText()),
-    node["arbeidsInntektInformasjon"]["inntektListe"].map(::toInntekt)
+    node.path("arbeidsInntektInformasjon").path("inntektListe").map(::toInntekt)
 )
 
 data class Måned(
