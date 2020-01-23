@@ -20,11 +20,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -109,6 +105,7 @@ suspend fun launchFlow(
     KafkaConsumer<String, JsonNode>(baseConfig.toConsumerConfig())
         .apply { subscribe(listOf(environment.spleisRapidtopic)) }
         .asFlow()
+        .filterNotNull()
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
         .filter { (_, value) -> value.hasNonNull("@behov") && value["@behov"].any { it.asText() == Inntektsberegning } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }
