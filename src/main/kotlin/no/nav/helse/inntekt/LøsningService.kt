@@ -28,7 +28,9 @@ class LøsningService(private val inntektsRestClient: InntektRestClient) {
                 )
             )
         } catch (e: Exception) {
-            log.error("Feilet ved løsing av behov for {}", keyValue("vedtaksperiodeId", vedtaksid), e)
+            log.error("Feilet ved løsing av behov for {} {}",
+                keyValue("vedtaksperiodeId", vedtaksid),
+                keyValue("behovId", behov["@id"]), e)
             null
         }
     }
