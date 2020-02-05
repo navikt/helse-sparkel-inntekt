@@ -105,7 +105,6 @@ suspend fun launchFlow(
     KafkaConsumer<String, JsonNode>(baseConfig.toConsumerConfig())
         .apply { subscribe(listOf(environment.spleisRapidtopic)) }
         .asFlow()
-        .filterNotNull()
         .filterNot { (_, value) -> value.hasNonNull("@løsning") }
         .filter { (_, value) -> value.hasNonNull("@behov") && value["@behov"].any { it.asText() == Inntektsberegning } }
         .map { (key, value) -> key to løsningService.løsBehov(value) }

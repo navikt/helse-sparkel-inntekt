@@ -13,8 +13,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.config.SaslConfigs
+import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -58,8 +60,10 @@ internal class AppTest : CoroutineScope {
 
     private lateinit var job: Job
 
-    private val behovProducer = KafkaProducer<String, JsonNode>(testKafkaProperties.toProducerConfig())
-    private val behovConsumer = KafkaConsumer<String, JsonNode>(testKafkaProperties.toConsumerConfig().also {
+    private val behovProducer = KafkaProducer<String, String>(testKafkaProperties.toProducerConfig().also {
+        it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+    })
+    private val behovConsumer = KafkaConsumer<String, JsonNode?>(testKafkaProperties.toConsumerConfig().also {
         it[ConsumerConfig.GROUP_ID_CONFIG] = "noefornuftigværsåsnill"
     }).also {
         it.subscribe(listOf(testTopic))
@@ -115,15 +119,38 @@ internal class AppTest : CoroutineScope {
         }
     }
 
+    @Test
+    fun `ignorerer hendelser med ugyldig json`() {
+        val start = YearMonth.of(2020, 2)
+        val slutt = YearMonth.of(2021, 1)
+        val behovAlleredeBesvart = behovMedLøsning(start, slutt, "1")
+        val behovSomTrengerSvar = behov(start, slutt, "2")
+
+        behovProducer.send(ProducerRecord(testTopic, "0", "THIS IS NOT JSON"))
+        behovProducer.send(ProducerRecord(testTopic, "1", behovAlleredeBesvart))
+        behovProducer.send(ProducerRecord(testTopic, "2", behovSomTrengerSvar))
+
+        assertLøsning(Duration.ofSeconds(10)) { alleSvar ->
+            assertEquals(1, alleSvar.medId("1").size)
+            assertEquals(1, alleSvar.medId("2").size)
+
+            val svar = alleSvar.medId("2").first()
+            assertEquals("123", svar["aktørId"].asText())
+
+            assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
+            assertEquals("2", svar["@id"].asText())
+        }
+    }
+
     private fun List<JsonNode>.medId(id: String) = filter { it["@id"].asText() == id }
 
     private fun assertLøsning(duration: Duration, assertion: (List<JsonNode>) -> Unit) =
-        mutableListOf<ConsumerRecord<String, JsonNode>>().apply {
+        mutableListOf<ConsumerRecord<String, JsonNode?>>().apply {
             await()
                 .atMost(duration)
                 .untilAsserted {
                     addAll(behovConsumer.poll(Duration.ofMillis(100)).toList())
-                    assertion(map { it.value() }.filter { it.hasNonNull("@løsning") })
+                    assertion(mapNotNull { it.value() }.filter { it.hasNonNull("@løsning") })
                 }
         }
 
@@ -133,10 +160,10 @@ internal class AppTest : CoroutineScope {
         embeddedKafkaEnvironment.close()
     }
 
-    private fun behov(start: YearMonth, slutt: YearMonth, id: String = "behovsid") = objectMapper.valueToTree<JsonNode>(behovMap(start, slutt, id))
+    private fun behov(start: YearMonth, slutt: YearMonth, id: String = "behovsid") = objectMapper.writeValueAsString(behovMap(start, slutt, id))
 
     private fun behovMedLøsning(start: YearMonth, slutt: YearMonth, id: String = "behovsid") =
-        objectMapper.valueToTree<JsonNode>(behovMap(start, slutt, id) + mapOf("@løsning" to Løsning(emptyList())))
+        objectMapper.writeValueAsString(behovMap(start, slutt, id) + mapOf("@løsning" to Løsning(emptyList())))
 
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
         "@id" to id,
