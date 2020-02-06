@@ -91,7 +91,7 @@ internal class AppTest : CoroutineScope {
             assertEquals(1, alleSvar.medId("behovsid").size)
 
             val svar = alleSvar.first()
-            assertEquals("123", svar["aktørId"].asText())
+            assertEquals("123", svar["fødselsnummer"].asText())
             assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
             assertEquals(2, svar["@løsning"][Inntektsberegning].size())
         }
@@ -112,7 +112,7 @@ internal class AppTest : CoroutineScope {
             assertEquals(1, alleSvar.medId("2").size)
 
             val svar = alleSvar.medId("2").first()
-            assertEquals("123", svar["aktørId"].asText())
+            assertEquals("123", svar["fødselsnummer"].asText())
 
             assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
             assertEquals("2", svar["@id"].asText())
@@ -135,7 +135,7 @@ internal class AppTest : CoroutineScope {
             assertEquals(1, alleSvar.medId("2").size)
 
             val svar = alleSvar.medId("2").first()
-            assertEquals("123", svar["aktørId"].asText())
+            assertEquals("123", svar["fødselsnummer"].asText())
 
             assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
             assertEquals("2", svar["@id"].asText())
@@ -168,7 +168,7 @@ internal class AppTest : CoroutineScope {
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
         "@id" to id,
         "@behov" to listOf(Inntektsberegning, "EgenAnsatt"),
-        "aktørId" to "123",
+        "fødselsnummer" to "123",
         "vedtaksperiodeId" to "vedtaksperiodeId",
         "beregningStart" to "$start",
         "beregningSlutt" to "$slutt"

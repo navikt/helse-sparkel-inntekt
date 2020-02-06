@@ -19,7 +19,7 @@ class InntektRestClient(
     private val stsRestClient: StsRestClient
 ) {
     suspend fun hentInntektsliste(
-        aktørId: String,
+        fnr: String,
         fom: YearMonth,
         tom: YearMonth,
         filter: String,
@@ -34,8 +34,8 @@ class InntektRestClient(
             accept(ContentType.Application.Json)
             body = mapOf(
                 "ident" to mapOf(
-                    "identifikator" to aktørId,
-                    "aktoerType" to "AKTOER_ID"
+                    "identifikator" to fnr,
+                    "aktoerType" to "NATURLIG_IDENT"
                 ),
                 "ainntektsfilter" to filter,
                 // TODO: Bruker Foreldrepenger midlertidig på grunn av mangel på tilgang til 8-28 og 8-30 som Sykepenger
@@ -49,7 +49,7 @@ class InntektRestClient(
 
 
 
-private fun toMånedListe(node: JsonNode) = node["arbeidsInntektMaaned"].map(::tilMåned)
+private fun toMånedListe(node: JsonNode) = node.path("arbeidsInntektMaaned").map(::tilMåned)
 
 private fun toInntekt(node: JsonNode) = Inntekt(
     beløp = node["beloep"].asDouble(),

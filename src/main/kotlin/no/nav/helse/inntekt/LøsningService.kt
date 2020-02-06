@@ -20,7 +20,7 @@ class LøsningService(private val inntektsRestClient: InntektRestClient) {
             val filter = filterForPeriode(beregningStart, beregningSlutt)
             Løsning(
                 inntektsRestClient.hentInntektsliste(
-                    behov["aktørId"].asText(),
+                    behov["fødselsnummer"].asText(),
                     beregningStart,
                     beregningSlutt,
                     filter,

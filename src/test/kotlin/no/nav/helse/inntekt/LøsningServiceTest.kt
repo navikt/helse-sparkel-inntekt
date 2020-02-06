@@ -29,7 +29,7 @@ internal class LøsningServiceTest {
         verify {
             runBlocking {
                 inntektRestClient.hentInntektsliste(
-                    aktørId = "123",
+                    fnr = "123",
                     fom = start,
                     tom = slutt,
                     filter = "8-28",
@@ -49,7 +49,7 @@ internal class LøsningServiceTest {
         verify {
             runBlocking {
                 inntektRestClient.hentInntektsliste(
-                    aktørId = "123",
+                    fnr = "123",
                     fom = start,
                     tom = slutt,
                     filter = "8-30",
@@ -73,7 +73,7 @@ internal class LøsningServiceTest {
         mapOf(
             "@id" to "behovsid",
             "@behov" to listOf(Inntektsberegning, "Sykepengehistorikk"),
-            "aktørId" to "123",
+            "fødselsnummer" to "123",
             "vedtaksperiodeId" to "vedtaksperiodeId",
             "beregningStart" to "$start",
             "beregningSlutt" to "$slutt"
