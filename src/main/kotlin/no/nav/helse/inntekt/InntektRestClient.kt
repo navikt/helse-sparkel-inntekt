@@ -11,6 +11,7 @@ import io.ktor.client.response.readText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
+import kotlinx.coroutines.runBlocking
 import java.time.YearMonth
 
 class InntektRestClient(
@@ -18,13 +19,13 @@ class InntektRestClient(
     private val httpClient: HttpClient,
     private val stsRestClient: StsRestClient
 ) {
-    suspend fun hentInntektsliste(
+    fun hentInntektsliste(
         fnr: String,
         fom: YearMonth,
         tom: YearMonth,
         filter: String,
         callId: String
-    ) =
+    ) = runBlocking {
         httpClient.request<HttpResponse>("$baseUrl/api/v1/hentinntektliste") {
             method = HttpMethod.Post
             header("Authorization", "Bearer ${stsRestClient.token()}")
@@ -43,11 +44,9 @@ class InntektRestClient(
                 "maanedFom" to fom,
                 "maanedTom" to tom
             )
-        }
-            .let { toMånedListe(objectMapper.readValue(it.readText())) }
+        }.let { toMånedListe(objectMapper.readValue(it.readText())) }
+    }
 }
-
-
 
 private fun toMånedListe(node: JsonNode) = node.path("arbeidsInntektMaaned").map(::tilMåned)
 

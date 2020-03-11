@@ -1,37 +1,66 @@
 package no.nav.helse.inntekt
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ObjectNode
 import net.logstash.logback.argument.StructuredArguments.keyValue
+import no.nav.helse.rapids_rivers.JsonMessage
+import no.nav.helse.rapids_rivers.RapidsConnection
+import no.nav.helse.rapids_rivers.River
+import org.slf4j.LoggerFactory
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
-class LøsningService(private val inntektsRestClient: InntektRestClient) {
-    suspend fun løsBehov(behov: JsonNode): JsonNode? = hentLøsning(behov)?.let { løsning ->
-        behov.deepCopy<ObjectNode>().set("@løsning", objectMapper.valueToTree(løsning))
+class LøsningService(rapidsConnection: RapidsConnection, private val inntektsRestClient: InntektRestClient) :
+    River.PacketListener {
+    private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+    private val log = LoggerFactory.getLogger(this::class.java)
+
+    init {
+        River(rapidsConnection).apply {
+            validate { it.requireAll("@behov", listOf(Inntektsberegning)) }
+            validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId",
+                "beregningStart", "beregningSlutt") }
+            validate { it.forbid("@løsning") }
+        }.register(this)
     }
 
-    private suspend fun hentLøsning(behov: JsonNode): Løsning? {
-        log.info("hentet inntekter for behov: ${behov["@id"].asText()}")
-        val vedtaksid = behov["vedtaksperiodeId"].asText()
-        val beregningStart = YearMonth.parse(behov["beregningStart"].asText())
-        val beregningSlutt = YearMonth.parse(behov["beregningSlutt"].asText())
+    override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+        sikkerlogg.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
+        log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
+
+        val beregningStart = YearMonth.parse(packet["beregningStart"].asText())
+        val beregningSlutt = YearMonth.parse(packet["beregningSlutt"].asText())
+
+        packet["@løsning"] = mapOf<String, Any>(
+            Inntektsberegning to hentLøsning(
+                packet["@id"].asText(),
+                packet["fødselsnummer"].asText(),
+                packet["vedtaksperiodeId"].asText(),
+                beregningStart,
+                beregningSlutt
+            )
+        )
+        context.send(packet.toJson())
+    }
+
+    private fun hentLøsning(
+        id: String,
+        vedtaksperiodeId: String,
+        fødselsnummer: String,
+        beregningStart: YearMonth,
+        beregningSlutt: YearMonth
+    ): List<Måned> {
+        log.info("hentet inntekter for behov: $id")
         return try {
             val filter = filterForPeriode(beregningStart, beregningSlutt)
-            Løsning(
-                inntektsRestClient.hentInntektsliste(
-                    behov["fødselsnummer"].asText(),
-                    beregningStart,
-                    beregningSlutt,
-                    filter,
-                    vedtaksid
-                )
+            inntektsRestClient.hentInntektsliste(
+                fødselsnummer,
+                beregningStart,
+                beregningSlutt,
+                filter,
+                vedtaksperiodeId
             )
         } catch (e: Exception) {
-            log.error("Feilet ved løsing av behov for {} {}",
-                keyValue("vedtaksperiodeId", vedtaksid),
-                keyValue("behovId", behov["@id"]), e)
-            null
+            log.error("Feilet ved løsing av behov id=$id for vedtaksperiodeId=$vedtaksperiodeId: ${e.message}", e)
+            emptyList()
         }
     }
 
@@ -45,7 +74,3 @@ class LøsningService(private val inntektsRestClient: InntektRestClient) {
 
     private fun månederMellom(fom: YearMonth, tom: YearMonth) = ChronoUnit.MONTHS.between(fom, tom)
 }
-
-data class Løsning(
-    @JvmField val Inntektsberegning: List<Måned>
-)
