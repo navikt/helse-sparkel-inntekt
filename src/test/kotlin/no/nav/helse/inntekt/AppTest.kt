@@ -1,6 +1,8 @@
 package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
+import io.mockk.spyk
+import io.mockk.verify
 import no.nav.helse.rapids_rivers.RapidsConnection
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,12 +28,13 @@ internal class AppTest {
         override fun send(message: String) {
             sentMessages.add(objectMapper.readTree(message))
         }
+
         override fun send(key: String, message: String) {}
     }
 
     private val mockResponseGenerator = defaultMockResponseGenerator()
     private val inntektsRestClient =
-        InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient)
+        spyk(InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient))
 
     private val løsningService = LøsningService(rapid, inntektsRestClient)
 
@@ -50,6 +53,15 @@ internal class AppTest {
         assertEquals("123", svar["fødselsnummer"].asText())
         assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
         assertEquals(2, svar["@løsning"][Inntektsberegning].size())
+        verify {
+            inntektsRestClient.hentInntektsliste(
+                fnr = "123",
+                fom = start,
+                tom = slutt,
+                filter = "8-30",
+                callId = any()
+            )
+        }
     }
 
     @Test
@@ -83,14 +95,17 @@ internal class AppTest {
         assertEquals("2", svar["@id"].asText())
     }
 
-    private fun behov(start: YearMonth, slutt: YearMonth, id: String = "behovsid") = objectMapper.writeValueAsString(behovMap(start, slutt, id))
+    private fun behov(start: YearMonth, slutt: YearMonth, id: String = "behovsid") =
+        objectMapper.writeValueAsString(behovMap(start, slutt, id))
 
     private fun behovMedLøsning(start: YearMonth, slutt: YearMonth, id: String) =
-        objectMapper.writeValueAsString(behovMap(start, slutt, id) + mapOf<String, Any>(
-            "@løsning" to mapOf<String, Any>(
-                Inntektsberegning to emptyList<Any>()
+        objectMapper.writeValueAsString(
+            behovMap(start, slutt, id) + mapOf<String, Any>(
+                "@løsning" to mapOf<String, Any>(
+                    Inntektsberegning to emptyList<Any>()
+                )
             )
-        ))
+        )
 
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
         "@id" to id,
