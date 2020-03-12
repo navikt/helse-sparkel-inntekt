@@ -31,11 +31,11 @@ class LøsningService(rapidsConnection: RapidsConnection, private val inntektsRe
 
         packet["@løsning"] = mapOf<String, Any>(
             Inntektsberegning to hentLøsning(
-                packet["@id"].asText(),
-                packet["fødselsnummer"].asText(),
-                packet["vedtaksperiodeId"].asText(),
-                beregningStart,
-                beregningSlutt
+                id = packet["@id"].asText(),
+                vedtaksperiodeId = packet["vedtaksperiodeId"].asText(),
+                fødselsnummer = packet["fødselsnummer"].asText(),
+                beregningStart = beregningStart,
+                beregningSlutt = beregningSlutt
             )
         )
         context.send(packet.toJson())
