@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val junitJupiterVersion = "5.5.2"
+val junitJupiterVersion = "5.6.0"
 val ktorVersion = "1.2.4"
 
 plugins {
@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    implementation("no.nav.helse:rapids-and-rivers:1.ec0400d")
+    implementation("com.github.navikt:rapids-and-rivers:1.a468ae5")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-auth-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-json-jvm:$ktorVersion")
