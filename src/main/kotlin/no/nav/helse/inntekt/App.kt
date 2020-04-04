@@ -19,7 +19,7 @@ val objectMapper: ObjectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
 
 val log: Logger = LoggerFactory.getLogger("no.nav.helse.sparkel-inntekt")
-const val Inntektsberegning = "Inntektsberegning"
+const val Inntektsberegningbehov = "Inntektsberegning"
 
 fun main() {
     val env = System.getenv()
@@ -37,7 +37,7 @@ fun main() {
     )
 
     RapidApplication.create(System.getenv()).apply {
-        LøsningService(this, inntektRestClient)
+        Inntektsberegning(this, inntektRestClient)
     }.start()
 }
 

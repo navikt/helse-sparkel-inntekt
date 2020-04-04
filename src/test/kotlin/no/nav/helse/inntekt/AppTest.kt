@@ -36,7 +36,9 @@ internal class AppTest {
     private val inntektsRestClient =
         spyk(InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient))
 
-    private val løsningService = LøsningService(rapid, inntektsRestClient)
+    init {
+        Inntektsberegning(rapid, inntektsRestClient)
+    }
 
     @BeforeEach
     fun reset() {
@@ -51,8 +53,8 @@ internal class AppTest {
         assertEquals(1, sentMessages.size)
         val svar = sentMessages.first()
         assertEquals("123", svar["fødselsnummer"].asText())
-        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
-        assertEquals(2, svar["@løsning"][Inntektsberegning].size())
+        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegningbehov))
+        assertEquals(2, svar["@løsning"][Inntektsberegningbehov].size())
         verify {
             inntektsRestClient.hentInntektsliste(
                 fnr = "123",
@@ -75,7 +77,7 @@ internal class AppTest {
         assertEquals(1, sentMessages.size)
         val svar = sentMessages.first()
         assertEquals("123", svar["fødselsnummer"].asText())
-        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
+        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegningbehov))
         assertEquals("2", svar["@id"].asText())
     }
 
@@ -91,7 +93,7 @@ internal class AppTest {
         assertEquals(1, sentMessages.size)
         val svar = sentMessages.first()
         assertEquals("123", svar["fødselsnummer"].asText())
-        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegning))
+        assertTrue(svar["@løsning"].hasNonNull(Inntektsberegningbehov))
         assertEquals("2", svar["@id"].asText())
     }
 
@@ -102,14 +104,14 @@ internal class AppTest {
         objectMapper.writeValueAsString(
             behovMap(start, slutt, id) + mapOf<String, Any>(
                 "@løsning" to mapOf<String, Any>(
-                    Inntektsberegning to emptyList<Any>()
+                    Inntektsberegningbehov to emptyList<Any>()
                 )
             )
         )
 
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
         "@id" to id,
-        "@behov" to listOf(Inntektsberegning, "EgenAnsatt"),
+        "@behov" to listOf(Inntektsberegningbehov, "EgenAnsatt"),
         "fødselsnummer" to "123",
         "vedtaksperiodeId" to "vedtaksperiodeId",
         "beregningStart" to "$start",

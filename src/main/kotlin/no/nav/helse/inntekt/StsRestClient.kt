@@ -5,8 +5,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.response.HttpResponse
-import io.ktor.client.response.readText
+import io.ktor.client.statement.HttpStatement
+import io.ktor.client.statement.readText
 import io.ktor.http.ContentType
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
@@ -26,14 +26,12 @@ class StsRestClient(
         return cachedOidcToken.access_token
     }
 
-    private suspend fun fetchToken(): Token = httpClient.get<HttpResponse>(
+    private suspend fun fetchToken(): Token = httpClient.get<HttpStatement>(
         "$baseUrl/rest/v1/sts/token?grant_type=client_credentials&scope=openid"
     ) {
         header("Authorization", serviceUser.basicAuth)
         accept(ContentType.Application.Json)
-    }.let { response ->
-        objectMapper.readValue(response.readText())
-    }
+    }.execute { objectMapper.readValue<Token>(it.readText()) }
 
     internal data class Token(
         internal val access_token: String,

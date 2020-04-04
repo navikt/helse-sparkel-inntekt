@@ -1,23 +1,26 @@
 package no.nav.helse.inntekt
 
+import com.fasterxml.jackson.databind.JsonNode
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
+import no.nav.helse.rapids_rivers.asYearMonth
 import org.slf4j.LoggerFactory
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
-class LøsningService(rapidsConnection: RapidsConnection, private val inntektsRestClient: InntektRestClient) :
+class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntektsRestClient: InntektRestClient) :
     River.PacketListener {
     private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
     private val log = LoggerFactory.getLogger(this::class.java)
 
     init {
         River(rapidsConnection).apply {
-            validate { it.requireAll("@behov", listOf(Inntektsberegning)) }
-            validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId",
-                "beregningStart", "beregningSlutt") }
+            validate { it.requireContains("@behov", Inntektsberegningbehov) }
+            validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId") }
+            validate { it.require ("beregningStart", JsonNode::asYearMonth) }
+            validate { it.require ("beregningSlutt", JsonNode::asYearMonth) }
             validate { it.forbid("@løsning") }
         }.register(this)
     }
@@ -26,11 +29,11 @@ class LøsningService(rapidsConnection: RapidsConnection, private val inntektsRe
         sikkerlogg.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
         log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
 
-        val beregningStart = YearMonth.parse(packet["beregningStart"].asText())
-        val beregningSlutt = YearMonth.parse(packet["beregningSlutt"].asText())
+        val beregningStart = packet["beregningStart"].asYearMonth()
+        val beregningSlutt = packet["beregningSlutt"].asYearMonth()
 
         packet["@løsning"] = mapOf<String, Any>(
-            Inntektsberegning to hentLøsning(
+            Inntektsberegningbehov to hentLøsning(
                 id = packet["@id"].asText(),
                 vedtaksperiodeId = packet["vedtaksperiodeId"].asText(),
                 fødselsnummer = packet["fødselsnummer"].asText(),
