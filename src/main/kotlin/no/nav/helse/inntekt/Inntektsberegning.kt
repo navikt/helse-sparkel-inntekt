@@ -41,7 +41,9 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
                 beregningSlutt = beregningSlutt
             )
         )
-        context.send(packet.toJson())
+        context.send(packet.toJson().also {
+            sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
+        })
     }
 
     private fun hentLøsning(
