@@ -1,6 +1,9 @@
 package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
+import io.ktor.client.features.ResponseException
+import io.ktor.client.statement.readText
+import kotlinx.coroutines.runBlocking
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -47,6 +50,9 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
                     log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
                     sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
                 })
+            } catch (e: ResponseException) {
+                log.error("Feilet ved løsing av behov: ${e.message}", e)
+                runBlocking { sikkerlogg.error("Feilet ved løsing av behov: ${e.message}\n\t${e.response.readText()}", e) }
             } catch (e: Exception) {
                 log.error("Feilet ved løsing av behov: ${e.message}", e)
                 sikkerlogg.error("Feilet ved løsing av behov: ${e.message}", e)
