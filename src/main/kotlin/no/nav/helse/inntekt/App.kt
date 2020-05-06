@@ -47,8 +47,13 @@ private fun simpleHttpClient() = HttpClient() {
     install(Logging) {
         level = LogLevel.BODY
         logger = object : io.ktor.client.features.logging.Logger {
+            private var logBody = false
             override fun log(message: String) {
-                sikkerLogg.debug(message)
+                when {
+                    message == "BODY START" -> logBody = true
+                    message == "BODY END" -> logBody = false
+                    logBody -> sikkerLogg.debug("respons fra Inntektskomponenten: $message")
+                }
             }
         }
     }
