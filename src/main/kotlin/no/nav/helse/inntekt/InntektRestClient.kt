@@ -50,8 +50,7 @@ class InntektRestClient(
                         "aktoerType" to "NATURLIG_IDENT"
                     ),
                     "ainntektsfilter" to filter,
-                    // TODO: Bruker Foreldrepenger midlertidig på grunn av mangel på tilgang til 8-28 og 8-30 som Sykepenger
-                    "formaal" to "Foreldrepenger",
+                    "formaal" to "Sykepenger",
                     "maanedFom" to fom,
                     "maanedTom" to tom
                 )
