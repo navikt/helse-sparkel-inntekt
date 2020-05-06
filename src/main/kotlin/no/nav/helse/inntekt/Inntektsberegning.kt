@@ -7,6 +7,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 import no.nav.helse.rapids_rivers.asYearMonth
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
@@ -26,47 +27,47 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
     }
 
     override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
-        sikkerlogg.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
-        log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
+        withMDC(mapOf(
+            "behovId" to packet["@id"].asText(),
+            "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
+        )) {
+            val beregningStart = packet["beregningStart"].asYearMonth()
+            val beregningSlutt = packet["beregningSlutt"].asYearMonth()
 
-        val beregningStart = packet["beregningStart"].asYearMonth()
-        val beregningSlutt = packet["beregningSlutt"].asYearMonth()
-
-        packet["@løsning"] = mapOf<String, Any>(
-            Inntektsberegningbehov to hentLøsning(
-                id = packet["@id"].asText(),
-                vedtaksperiodeId = packet["vedtaksperiodeId"].asText(),
-                fødselsnummer = packet["fødselsnummer"].asText(),
-                beregningStart = beregningStart,
-                beregningSlutt = beregningSlutt
-            )
-        )
-        context.send(packet.toJson().also {
-            sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
-        })
+            try {
+                packet["@løsning"] = mapOf<String, Any>(
+                    Inntektsberegningbehov to hentLøsning(
+                        callId = "${packet["vedtaksperiodeId"].asText()}-${packet["@id"].asText()}",
+                        fødselsnummer = packet["fødselsnummer"].asText(),
+                        beregningStart = beregningStart,
+                        beregningSlutt = beregningSlutt
+                    )
+                )
+                context.send(packet.toJson().also {
+                    log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
+                    sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
+                })
+            } catch (e: Exception) {
+                log.error("Feilet ved løsing av behov: ${e.message}", e)
+                sikkerlogg.error("Feilet ved løsing av behov: ${e.message}", e)
+            }
+        }
     }
 
     private fun hentLøsning(
-        id: String,
-        vedtaksperiodeId: String,
+        callId: String,
         fødselsnummer: String,
         beregningStart: YearMonth,
         beregningSlutt: YearMonth
     ): List<Måned> {
-        log.info("hentet inntekter for behov: $id")
-        return try {
-            val filter = filterForPeriode(beregningStart, beregningSlutt)
-            inntektsRestClient.hentInntektsliste(
-                fødselsnummer,
-                beregningStart,
-                beregningSlutt,
-                filter,
-                vedtaksperiodeId
-            )
-        } catch (e: Exception) {
-            log.error("Feilet ved løsing av behov id=$id for vedtaksperiodeId=$vedtaksperiodeId: ${e.message}", e)
-            emptyList()
-        }
+        val filter = filterForPeriode(beregningStart, beregningSlutt)
+        return inntektsRestClient.hentInntektsliste(
+            fødselsnummer,
+            beregningStart,
+            beregningSlutt,
+            filter,
+            callId
+        )
     }
 
     private fun filterForPeriode(beregningStart: YearMonth, beregningSlutt: YearMonth): String {
@@ -78,4 +79,14 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
     }
 
     private fun månederMellom(fom: YearMonth, tom: YearMonth) = ChronoUnit.MONTHS.between(fom, tom)
+
+    private fun withMDC(context: Map<String, String>, block: () -> Unit) {
+        val contextMap = MDC.getCopyOfContextMap() ?: emptyMap()
+        try {
+            MDC.setContextMap(contextMap + context)
+            block()
+        } finally {
+            MDC.setContextMap(contextMap)
+        }
+    }
 }

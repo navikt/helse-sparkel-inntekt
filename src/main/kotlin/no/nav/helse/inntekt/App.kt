@@ -7,8 +7,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.HttpClient
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.features.logging.LogLevel
+import io.ktor.client.features.logging.Logging
 import no.nav.helse.rapids_rivers.RapidApplication
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -18,7 +19,6 @@ val objectMapper: ObjectMapper = jacksonObjectMapper()
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .registerModule(JavaTimeModule())
 
-val log: Logger = LoggerFactory.getLogger("no.nav.helse.sparkel-inntekt")
 const val Inntektsberegningbehov = "Inntektsberegning"
 
 fun main() {
@@ -42,6 +42,17 @@ fun main() {
 }
 
 private fun simpleHttpClient() = HttpClient() {
+    val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
+
+    install(Logging) {
+        level = LogLevel.BODY
+        logger = object : io.ktor.client.features.logging.Logger {
+            override fun log(message: String) {
+                sikkerLogg.debug(message)
+            }
+        }
+    }
+
     install(JsonFeature) {
         this.serializer = JacksonSerializer {
             registerModule(JavaTimeModule())

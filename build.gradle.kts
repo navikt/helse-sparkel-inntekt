@@ -4,7 +4,7 @@ val junitJupiterVersion = "5.6.0"
 val ktorVersion = "1.3.1"
 
 plugins {
-    kotlin("jvm") version "1.3.70"
+    kotlin("jvm") version "1.3.72"
 }
 
 group = "no.nav.helse"
@@ -21,15 +21,16 @@ repositories {
             password = githubPassword
         }
     }
-    maven("http://packages.confluent.io/maven/")
+    maven("https://packages.confluent.io/maven/")
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.a1c8748")
+    implementation("com.github.navikt:rapids-and-rivers:1.47c31b4")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-auth-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
