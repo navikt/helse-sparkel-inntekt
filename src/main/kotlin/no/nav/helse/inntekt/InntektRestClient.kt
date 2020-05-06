@@ -50,7 +50,7 @@ class InntektRestClient(
                         "aktoerType" to "NATURLIG_IDENT"
                     ),
                     "ainntektsfilter" to filter,
-                    "formaal" to "Sykepenger",
+                    "formaal" to "Foreldrepenger",
                     "maanedFom" to fom,
                     "maanedTom" to tom
                 )
