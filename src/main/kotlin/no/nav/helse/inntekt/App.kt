@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.HttpClient
+import io.ktor.client.features.HttpTimeout
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.logging.LogLevel
@@ -56,6 +57,12 @@ private fun simpleHttpClient() = HttpClient() {
                 }
             }
         }
+    }
+
+    install(HttpTimeout) {
+        connectTimeoutMillis = 10000
+        requestTimeoutMillis = 10000
+        socketTimeoutMillis = 10000
     }
 
     install(JsonFeature) {
