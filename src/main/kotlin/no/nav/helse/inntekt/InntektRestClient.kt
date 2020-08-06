@@ -64,14 +64,13 @@ private fun toMånedListe(node: JsonNode) = node.path("arbeidsInntektMaaned").ma
 private fun toInntekt(node: JsonNode) = Inntekt(
     beløp = node["beloep"].asDouble(),
     inntektstype = Inntektstype.valueOf(node["inntektType"].textValue()),
-    orgnummer = node["virksomhet"].let {
-        if (it["aktoerType"].asText() == "ORGANISASJON") {
-            it["identifikator"].asText()
-        } else {
-            null
-        }
-    }
+    orgnummer = identifikator(node, "ORGANISASJON"),
+    fødselsnummer = identifikator(node, "NATURLIG_IDENT"),
+    aktørId = identifikator(node, "AKTOER_ID")
 )
+
+private fun identifikator(node: JsonNode, type: String) =
+    node["virksomhet"].takeIf { it["aktoerType"].asText() == type }?.get("identifikator")?.asText()
 
 private fun tilMåned(node: JsonNode) = Måned(
     YearMonth.parse(node["aarMaaned"].asText()),
@@ -85,7 +84,9 @@ data class Måned(
 data class Inntekt(
     val beløp: Double,
     val inntektstype: Inntektstype,
-    val orgnummer: String?
+    val orgnummer: String?,
+    val fødselsnummer: String?,
+    val aktørId: String?
 )
 
 enum class Inntektstype {

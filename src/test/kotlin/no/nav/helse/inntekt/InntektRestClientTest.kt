@@ -30,12 +30,32 @@ class InntektRestClientTest {
 
 
     @Test
-    fun `person med inntektshistorikk`() = runBlocking {
-        responsMock.apply { every { get() }.returns(responsMedInntekt()) }
+    fun `person med inntektshistorikk fra org`() = runBlocking {
+        responsMock.apply { every { get() }.returns(responsMedInntekt("orgnummer1", "ORGANISASJON")) }
         val inntektsliste =
             inntektRestClient.hentInntektsliste("fnr", YearMonth.of(2019, 1), YearMonth.of(2019, 10), "8-30", "callId")
         assertNotNull(inntektsliste)
         assertEquals(1, inntektsliste.size)
+        assertEquals("orgnummer1", inntektsliste.first().inntektsliste.first().orgnummer)
+    }
+
+    @Test
+    fun `person med inntektshistorikk fra fødselsnummer`() = runBlocking {
+        responsMock.apply { every { get() }.returns(responsMedInntekt("fødselsnummer1", "NATURLIG_IDENT")) }
+        val inntektsliste =
+            inntektRestClient.hentInntektsliste("fnr", YearMonth.of(2019, 1), YearMonth.of(2019, 10), "8-30", "callId")
+        assertNotNull(inntektsliste)
+        assertEquals(1, inntektsliste.size)
+        assertEquals("fødselsnummer1", inntektsliste.first().inntektsliste.first().fødselsnummer)
+    }
+    @Test
+    fun `person med inntektshistorikk fra aktørId`() = runBlocking {
+        responsMock.apply { every { get() }.returns(responsMedInntekt("aktørid1", "AKTOER_ID")) }
+        val inntektsliste =
+            inntektRestClient.hentInntektsliste("fnr", YearMonth.of(2019, 1), YearMonth.of(2019, 10), "8-30", "callId")
+        assertNotNull(inntektsliste)
+        assertEquals(1, inntektsliste.size)
+        assertEquals("aktørid1", inntektsliste.first().inntektsliste.first().aktørId)
     }
 
     private val inntektRestClient = InntektRestClient(
@@ -65,7 +85,7 @@ private fun tomRespons() =
         }
     }"""
 
-private fun responsMedInntekt() =
+private fun responsMedInntekt(identifikator: String, aktoerType: String) =
     """
         {"arbeidsInntektMaaned": [
                     {
@@ -86,8 +106,8 @@ private fun responsMedInntekt() =
                                         "aktoerType": "ORGANISASJON"
                                     },
                                     "virksomhet": {
-                                        "identifikator": "orgnummer1",
-                                        "aktoerType": "ORGANISASJON"
+                                        "identifikator": "$identifikator",
+                                        "aktoerType": "$aktoerType"
                                     },
                                     "inntektsmottaker": {
                                         "identifikator": "aktørId",
