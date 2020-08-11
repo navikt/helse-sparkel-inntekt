@@ -39,6 +39,7 @@ fun main() {
 
     RapidApplication.create(System.getenv()).apply {
         Inntektsberegning(this, inntektRestClient)
+        Inntekter(this, inntektRestClient)
     }.start()
 }
 
