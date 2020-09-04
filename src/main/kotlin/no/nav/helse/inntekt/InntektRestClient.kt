@@ -66,7 +66,9 @@ private fun toInntekt(node: JsonNode) = Inntekt(
     inntektstype = Inntektstype.valueOf(node["inntektType"].textValue()),
     orgnummer = identifikator(node, "ORGANISASJON"),
     fødselsnummer = identifikator(node, "NATURLIG_IDENT"),
-    aktørId = identifikator(node, "AKTOER_ID")
+    aktørId = identifikator(node, "AKTOER_ID"),
+    beskrivelse = node["beskrivelse"].textValue(),
+    fordel = node["fordel"].textValue()
 )
 
 private fun identifikator(node: JsonNode, type: String) =
@@ -86,7 +88,9 @@ data class Inntekt(
     val inntektstype: Inntektstype,
     val orgnummer: String?,
     val fødselsnummer: String?,
-    val aktørId: String?
+    val aktørId: String?,
+    val beskrivelse: String?,
+    val fordel: String?
 )
 
 enum class Inntektstype {

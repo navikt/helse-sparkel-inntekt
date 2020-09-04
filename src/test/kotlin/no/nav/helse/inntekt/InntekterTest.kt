@@ -13,6 +13,7 @@ import io.ktor.http.fullPath
 import no.nav.helse.rapids_rivers.asYearMonth
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -68,6 +69,36 @@ internal class InntekterTest {
         testRapid.sendTestMessage(behov(start, slutt, Inntekter.Type.InntekterForSammenligningsgrunnlag))
         assertEquals(1, testRapid.inspektør.size)
         assertLøsning(Inntekter.Type.InntekterForSammenligningsgrunnlag, YearMonth.of(2019, 1), YearMonth.of(2019, 2))
+    }
+
+    @Test
+    fun `mapper nye felter beskrivelse og fordel sammenligningsgrunnlag`() {
+        val start = YearMonth.of(2020, 2)
+        val slutt = YearMonth.of(2021, 1)
+        testRapid.sendTestMessage(behov(start, slutt, Inntekter.Type.InntekterForSammenligningsgrunnlag))
+        val inntekt0 = testRapid.inspektør.message(0).path("@løsning").path(Inntekter.Type.InntekterForSammenligningsgrunnlag.name)[0]
+        val inntekt1 = testRapid.inspektør.message(0).path("@løsning").path(Inntekter.Type.InntekterForSammenligningsgrunnlag.name)[1]
+        assertEquals(0, inntekt0["inntektsliste"].size())
+        assertEquals(1, inntekt1["inntektsliste"].size())
+        inntekt1["inntektsliste"].forEach {
+            assertEquals("fastloenn", it.path("beskrivelse").textValue())
+            assertEquals("kontantytelse", it.path("fordel").textValue())
+        }
+    }
+
+    @Test
+    fun `mapper nye felter beskrivelse og fordel sykepengegrunnlag`() {
+        val start = YearMonth.of(2020, 2)
+        val slutt = YearMonth.of(2021, 1)
+        testRapid.sendTestMessage(behov(start, slutt, Inntekter.Type.InntekterForSykepengegrunnlag))
+        val inntekt0 = testRapid.inspektør.message(0).path("@løsning").path(Inntekter.Type.InntekterForSykepengegrunnlag.name)[0]
+        val inntekt1 = testRapid.inspektør.message(0).path("@løsning").path(Inntekter.Type.InntekterForSykepengegrunnlag.name)[1]
+        assertEquals(0, inntekt0["inntektsliste"].size())
+        assertEquals(1, inntekt1["inntektsliste"].size())
+        inntekt1["inntektsliste"].forEach {
+            assertEquals("fastloenn", it.path("beskrivelse").textValue())
+            assertEquals("kontantytelse", it.path("fordel").textValue())
+        }
     }
 
     private fun assertLøsning(behovType: Inntekter.Type, vararg yearsMonths: YearMonth) {
