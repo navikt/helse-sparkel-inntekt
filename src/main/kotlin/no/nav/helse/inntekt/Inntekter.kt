@@ -1,8 +1,8 @@
 package no.nav.helse.inntekt
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.ktor.client.features.ResponseException
-import io.ktor.client.statement.readText
+import io.ktor.client.features.*
+import io.ktor.client.statement.*
 import kotlinx.coroutines.runBlocking
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.inntekt.Inntekter.Type.InntekterForSammenligningsgrunnlag
@@ -13,6 +13,7 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.helse.rapids_rivers.asYearMonth
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import java.time.YearMonth
 
 class Inntekter(
     rapidsConnection: RapidsConnection,
@@ -39,14 +40,14 @@ class Inntekter(
             River(rapidsConnection).apply {
                 validate { it.requireContains("@behov", InntekterForSykepengegrunnlag.name) }
                 validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId") }
-                validate { it.require("beregningStart", JsonNode::asYearMonth) }
-                validate { it.require("beregningSlutt", JsonNode::asYearMonth) }
+                validate { it.require("beregningsperiodeStart", JsonNode::asYearMonth) }
+                validate { it.require("beregningsperiodeSlutt", JsonNode::asYearMonth) }
                 validate { it.forbid("@løsning") }
             }.register(this)
         }
 
         override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
-            this@Inntekter.onPacket(packet, context, InntekterForSykepengegrunnlag)
+            this@Inntekter.onSykepengegrunnlagPacket(packet, context)
         }
     }
 
@@ -64,14 +65,13 @@ class Inntekter(
         }
 
         override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
-            this@Inntekter.onPacket(packet, context, InntekterForSammenligningsgrunnlag)
+            this@Inntekter.onSammenligningsgrunnlagPacket(packet, context)
         }
     }
 
-    private fun onPacket(
+    private fun onSammenligningsgrunnlagPacket(
         packet: JsonMessage,
-        context: RapidsConnection.MessageContext,
-        type: Type
+        context: RapidsConnection.MessageContext
     ) {
         withMDC(
             mapOf(
@@ -82,32 +82,59 @@ class Inntekter(
             val beregningStart = packet["beregningStart"].asYearMonth()
             val beregningSlutt = packet["beregningSlutt"].asYearMonth()
 
-            try {
-                packet["@løsning"] = mapOf<String, Any>(
-                    type.name to inntektsRestClient.hentInntektsliste(
-                        fnr = packet["fødselsnummer"].asText(),
-                        fom = beregningStart,
-                        tom = beregningSlutt,
-                        filter = type.ainntektfilter,
-                        callId = "${packet["vedtaksperiodeId"].asText()}-${packet["@id"].asText()}"
-                    )
+            hentInntekter(packet, InntekterForSammenligningsgrunnlag, beregningStart, beregningSlutt, context)
+        }
+    }
+
+    private fun onSykepengegrunnlagPacket(
+        packet: JsonMessage,
+        context: RapidsConnection.MessageContext
+    ) {
+        withMDC(
+            mapOf(
+                "behovId" to packet["@id"].asText(),
+                "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
+            )
+        ) {
+            val beregningStart = packet["beregningsperiodeStart"].asYearMonth()
+            val beregningSlutt = packet["beregningsperiodeSlutt"].asYearMonth()
+
+            hentInntekter(packet, InntekterForSykepengegrunnlag, beregningStart, beregningSlutt, context)
+        }
+    }
+
+    private fun hentInntekter(
+        packet: JsonMessage,
+        type: Type,
+        beregningStart: YearMonth,
+        beregningSlutt: YearMonth,
+        context: RapidsConnection.MessageContext
+    ) {
+        try {
+            packet["@løsning"] = mapOf<String, Any>(
+                type.name to inntektsRestClient.hentInntektsliste(
+                    fnr = packet["fødselsnummer"].asText(),
+                    fom = beregningStart,
+                    tom = beregningSlutt,
+                    filter = type.ainntektfilter,
+                    callId = "${packet["vedtaksperiodeId"].asText()}-${packet["@id"].asText()}"
                 )
-                context.send(packet.toJson().also {
-                    log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
-                    sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
-                })
-            } catch (e: ResponseException) {
-                log.warn("Feilet ved løsing av behov: ${e.message}", e)
-                runBlocking {
-                    sikkerlogg.warn(
-                        "Feilet ved løsing av behov: ${e.message}\n\t${e.response.readText()}",
-                        e
-                    )
-                }
-            } catch (e: Exception) {
-                log.warn("Feilet ved løsing av behov: ${e.message}", e)
-                sikkerlogg.warn("Feilet ved løsing av behov: ${e.message}", e)
+            )
+            context.send(packet.toJson().also {
+                log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
+                sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
+            })
+        } catch (e: ResponseException) {
+            log.warn("Feilet ved løsing av behov: ${e.message}", e)
+            runBlocking {
+                sikkerlogg.warn(
+                    "Feilet ved løsing av behov: ${e.message}\n\t${e.response.readText()}",
+                    e
+                )
             }
+        } catch (e: Exception) {
+            log.warn("Feilet ved løsing av behov: ${e.message}", e)
+            sikkerlogg.warn("Feilet ved løsing av behov: ${e.message}", e)
         }
     }
 

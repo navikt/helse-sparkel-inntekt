@@ -118,7 +118,9 @@ internal class InntekterTest {
         "fødselsnummer" to "123",
         "vedtaksperiodeId" to "vedtaksperiodeId",
         "beregningStart" to "$start",
-        "beregningSlutt" to "$slutt"
+        "beregningSlutt" to "$slutt",
+        "beregningsperiodeStart" to "$start",
+        "beregningsperiodeSlutt" to "$slutt"
     )
 
     fun sykepengegrunnlagResponse() = """
