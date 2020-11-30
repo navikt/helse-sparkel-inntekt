@@ -111,10 +111,12 @@ internal class AppTest {
 
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String) = mapOf(
         "@id" to id,
-        "@behov" to listOf(Inntektsberegningbehov, "EgenAnsatt"),
+        "@behov" to listOf(Inntektsberegningbehov),
         "fødselsnummer" to "123",
         "vedtaksperiodeId" to "vedtaksperiodeId",
-        "beregningStart" to "$start",
-        "beregningSlutt" to "$slutt"
+        Inntektsberegningbehov to mapOf(
+            "beregningStart" to "$start",
+            "beregningSlutt" to "$slutt"
+        )
     )
 }

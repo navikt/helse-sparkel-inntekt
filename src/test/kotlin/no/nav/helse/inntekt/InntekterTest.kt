@@ -114,13 +114,15 @@ internal class InntekterTest {
 
     private fun behovMap(start: YearMonth, slutt: YearMonth, id: String, type: Inntekter.Type) = mapOf(
         "@id" to id,
-        "@behov" to listOf(type.name, "EgenAnsatt"),
+        "@behov" to listOf(type.name),
         "fødselsnummer" to "123",
         "vedtaksperiodeId" to "vedtaksperiodeId",
-        "beregningStart" to "$start",
-        "beregningSlutt" to "$slutt",
-        "beregningsperiodeStart" to "$start",
-        "beregningsperiodeSlutt" to "$slutt"
+        type.name to mapOf(
+            "beregningStart" to "$start",
+            "beregningSlutt" to "$slutt",
+            "beregningsperiodeStart" to "$start",
+            "beregningsperiodeSlutt" to "$slutt"
+        )
     )
 
     fun sykepengegrunnlagResponse() = """

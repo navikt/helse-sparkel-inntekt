@@ -23,8 +23,8 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
         River(rapidsConnection).apply {
             validate { it.requireContains("@behov", Inntektsberegningbehov) }
             validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId") }
-            validate { it.require ("beregningStart", JsonNode::asYearMonth) }
-            validate { it.require ("beregningSlutt", JsonNode::asYearMonth) }
+            validate { it.require ("$Inntektsberegningbehov.beregningStart", JsonNode::asYearMonth) }
+            validate { it.require ("$Inntektsberegningbehov.beregningSlutt", JsonNode::asYearMonth) }
             validate { it.forbid("@løsning") }
         }.register(this)
     }
@@ -34,8 +34,8 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
             "behovId" to packet["@id"].asText(),
             "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
         )) {
-            val beregningStart = packet["beregningStart"].asYearMonth()
-            val beregningSlutt = packet["beregningSlutt"].asYearMonth()
+            val beregningStart = packet["$Inntektsberegningbehov.beregningStart"].asYearMonth()
+            val beregningSlutt = packet["$Inntektsberegningbehov.beregningSlutt"].asYearMonth()
 
             try {
                 packet["@løsning"] = mapOf<String, Any>(

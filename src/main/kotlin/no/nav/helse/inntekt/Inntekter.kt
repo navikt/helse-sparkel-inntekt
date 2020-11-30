@@ -40,8 +40,8 @@ class Inntekter(
             River(rapidsConnection).apply {
                 validate { it.requireContains("@behov", InntekterForSykepengegrunnlag.name) }
                 validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId") }
-                validate { it.require("beregningsperiodeStart", JsonNode::asYearMonth) }
-                validate { it.require("beregningsperiodeSlutt", JsonNode::asYearMonth) }
+                validate { it.require("${InntekterForSykepengegrunnlag.name}.beregningsperiodeStart", JsonNode::asYearMonth) }
+                validate { it.require("${InntekterForSykepengegrunnlag.name}.beregningsperiodeSlutt", JsonNode::asYearMonth) }
                 validate { it.forbid("@løsning") }
             }.register(this)
         }
@@ -58,8 +58,8 @@ class Inntekter(
             River(rapidsConnection).apply {
                 validate { it.requireContains("@behov", InntekterForSammenligningsgrunnlag.name) }
                 validate { it.requireKey("@id", "fødselsnummer", "vedtaksperiodeId") }
-                validate { it.require("beregningStart", JsonNode::asYearMonth) }
-                validate { it.require("beregningSlutt", JsonNode::asYearMonth) }
+                validate { it.require("${InntekterForSammenligningsgrunnlag.name}.beregningStart", JsonNode::asYearMonth) }
+                validate { it.require("${InntekterForSammenligningsgrunnlag.name}.beregningSlutt", JsonNode::asYearMonth) }
                 validate { it.forbid("@løsning") }
             }.register(this)
         }
@@ -79,8 +79,8 @@ class Inntekter(
                 "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
             )
         ) {
-            val beregningStart = packet["beregningStart"].asYearMonth()
-            val beregningSlutt = packet["beregningSlutt"].asYearMonth()
+            val beregningStart = packet["${InntekterForSammenligningsgrunnlag.name}.beregningStart"].asYearMonth()
+            val beregningSlutt = packet["${InntekterForSammenligningsgrunnlag.name}.beregningSlutt"].asYearMonth()
 
             hentInntekter(packet, InntekterForSammenligningsgrunnlag, beregningStart, beregningSlutt, context)
         }
@@ -96,8 +96,8 @@ class Inntekter(
                 "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
             )
         ) {
-            val beregningStart = packet["beregningsperiodeStart"].asYearMonth()
-            val beregningSlutt = packet["beregningsperiodeSlutt"].asYearMonth()
+            val beregningStart = packet["${InntekterForSykepengegrunnlag.name}.beregningsperiodeStart"].asYearMonth()
+            val beregningSlutt = packet["${InntekterForSykepengegrunnlag.name}.beregningsperiodeSlutt"].asYearMonth()
 
             hentInntekter(packet, InntekterForSykepengegrunnlag, beregningStart, beregningSlutt, context)
         }
