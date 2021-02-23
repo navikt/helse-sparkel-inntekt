@@ -16,22 +16,16 @@ internal class AppTest {
     private val sentMessages = mutableListOf<JsonNode>()
     private val rapid = object : RapidsConnection() {
         fun sendTestMessage(message: String) {
-            listeners.forEach { it.onMessage(message, context) }
+            listeners.forEach { it.onMessage(message, this) }
         }
 
-        override fun publish(message: String) {}
+        override fun publish(message: String) {
+            sentMessages.add(objectMapper.readTree(message))
+        }
         override fun publish(key: String, message: String) {}
         override fun start() {}
         override fun stop() {}
     }
-    private val context = object : RapidsConnection.MessageContext {
-        override fun send(message: String) {
-            sentMessages.add(objectMapper.readTree(message))
-        }
-
-        override fun send(key: String, message: String) {}
-    }
-
     private val mockResponseGenerator = defaultMockResponseGenerator()
     private val inntektsRestClient =
         spyk(InntektRestClient("http://baseUrl.local", mockHttpClient(mockResponseGenerator), mockStsRestClient))

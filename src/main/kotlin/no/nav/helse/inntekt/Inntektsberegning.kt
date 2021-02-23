@@ -6,6 +6,7 @@ import io.ktor.client.statement.readText
 import kotlinx.coroutines.runBlocking
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.JsonMessage
+import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 import no.nav.helse.rapids_rivers.asYearMonth
@@ -29,7 +30,7 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
         }.register(this)
     }
 
-    override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+    override fun onPacket(packet: JsonMessage, context: MessageContext) {
         withMDC(mapOf(
             "behovId" to packet["@id"].asText(),
             "vedtaksperiodeId" to packet["vedtaksperiodeId"].asText()
@@ -46,7 +47,7 @@ class Inntektsberegning(rapidsConnection: RapidsConnection, private val inntekts
                         beregningSlutt = beregningSlutt
                     )
                 )
-                context.send(packet.toJson().also {
+                context.publish(packet.toJson().also {
                     log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
                     sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
                 })

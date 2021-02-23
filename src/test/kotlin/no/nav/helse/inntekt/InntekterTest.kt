@@ -23,7 +23,7 @@ internal class InntekterTest {
     private val testRapid = TestRapid()
     private val inntektRestClient = InntektRestClient("http://base.url", HttpClient(MockEngine) {
         install(JsonFeature) {
-            serializer = JacksonSerializer()
+            serializer = JacksonSerializer(jackson = objectMapper)
         }
         engine {
             addHandler { request ->
@@ -42,7 +42,7 @@ internal class InntekterTest {
         }
     }, mockStsRestClient)
 
-    private fun ByteArray.getFilter() = jacksonObjectMapper().readTree(this).get("ainntektsfilter").asText()
+    private fun ByteArray.getFilter() = objectMapper.readTree(this).get("ainntektsfilter").asText()
 
     init {
         Inntekter(testRapid, inntektRestClient)

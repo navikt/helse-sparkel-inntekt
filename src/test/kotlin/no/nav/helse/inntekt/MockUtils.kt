@@ -23,7 +23,7 @@ internal fun defaultMockResponseGenerator() = mockk<ResponseGenerator>(relaxed =
 
 internal fun mockHttpClient(mockResponseGenerator: ResponseGenerator) = HttpClient(MockEngine) {
     install(JsonFeature) {
-        serializer = JacksonSerializer()
+        serializer = JacksonSerializer(jackson = objectMapper)
     }
     engine {
         addHandler { request ->

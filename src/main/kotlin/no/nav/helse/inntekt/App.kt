@@ -67,10 +67,7 @@ private fun simpleHttpClient() = HttpClient() {
     }
 
     install(JsonFeature) {
-        this.serializer = JacksonSerializer {
-            registerModule(JavaTimeModule())
-            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        }
+        this.serializer = JacksonSerializer(jackson = objectMapper)
     }
 }
 

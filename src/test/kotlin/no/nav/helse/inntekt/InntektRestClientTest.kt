@@ -61,7 +61,7 @@ class InntektRestClientTest {
     private val inntektRestClient = InntektRestClient(
         "http://localhost.no", HttpClient(MockEngine) {
             install(JsonFeature) {
-                this.serializer = JacksonSerializer()
+                this.serializer = JacksonSerializer(jackson = objectMapper)
             }
             engine {
                 addHandler { request ->

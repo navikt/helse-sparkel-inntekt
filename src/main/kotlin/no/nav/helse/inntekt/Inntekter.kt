@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.inntekt.Inntekter.Type.InntekterForSammenligningsgrunnlag
 import no.nav.helse.inntekt.Inntekter.Type.InntekterForSykepengegrunnlag
+import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
@@ -46,7 +47,7 @@ class Inntekter(
             }.register(this)
         }
 
-        override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+        override fun onPacket(packet: JsonMessage, context: MessageContext) {
             this@Inntekter.onSykepengegrunnlagPacket(packet, context)
         }
     }
@@ -64,14 +65,14 @@ class Inntekter(
             }.register(this)
         }
 
-        override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+        override fun onPacket(packet: JsonMessage, context: MessageContext) {
             this@Inntekter.onSammenligningsgrunnlagPacket(packet, context)
         }
     }
 
     private fun onSammenligningsgrunnlagPacket(
         packet: JsonMessage,
-        context: RapidsConnection.MessageContext
+        context: MessageContext
     ) {
         withMDC(
             mapOf(
@@ -88,7 +89,7 @@ class Inntekter(
 
     private fun onSykepengegrunnlagPacket(
         packet: JsonMessage,
-        context: RapidsConnection.MessageContext
+        context: MessageContext
     ) {
         withMDC(
             mapOf(
@@ -108,7 +109,7 @@ class Inntekter(
         type: Type,
         beregningStart: YearMonth,
         beregningSlutt: YearMonth,
-        context: RapidsConnection.MessageContext
+        context: MessageContext
     ) {
         try {
             packet["@løsning"] = mapOf<String, Any>(
@@ -120,7 +121,7 @@ class Inntekter(
                     callId = "${packet["vedtaksperiodeId"].asText()}-${packet["@id"].asText()}"
                 )
             )
-            context.send(packet.toJson().also {
+            context.publish(packet.toJson().also {
                 log.info("løser behov: {}", keyValue("id", packet["@id"].asText()))
                 sikkerlogg.info("svarer behov {} med {}", keyValue("id", packet["@id"].asText()), it)
             })
